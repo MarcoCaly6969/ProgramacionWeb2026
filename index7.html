@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Administración de Slides</title>
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <style>
+    :root {
+      --header-bg: #1e293b;
+      --footer-bg: #1e293b;
+      --panel-bg: #f8fafc;
+      --border-color: #cbd5e1;
+      --slide0-accent: #0284c7;
+      --slides-global-accent: #059669;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #e2e8f0;
+      color: #1e293b;
+    }
+
+    /* 3.1 Cabecera */
+    header.app-header {
+      background-color: var(--header-bg);
+      color: #ffffff;
+      padding: 10px 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      z-index: 10;
+    }
+
+    .header-container {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .app-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-badge {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background-color: #334155;
+      color: #e2e8f0;
+      font-weight: normal;
+    }
+
+    .status-badge.ok {
+      background-color: #065f46;
+      color: #d1fae5;
+    }
+
+    .status-badge.warning {
+      background-color: #92400e;
+      color: #fef3c7;
+    }
+
+    .status-badge.error {
+      background-color: #991b1b;
+      color: #fee2e2;
+    }
+
+    /* Contenedor Principal */
+    .app-body {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    /* Paneles laterales de administración */
+    .side-panel {
+      width: 320px;
+      background-color: var(--panel-bg);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 12px;
+      gap: 14px;
+    }
+
+    .side-panel.right-panel {
+      width: 340px;
+      border-right: none;
+      border-left: 1px solid var(--border-color);
+    }
+
+    /* 3.2 Zona Central */
+    main.central-zone {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: auto;
+      background-color: #cbd5e1;
+      position: relative;
+    }
+
+    /* Lienzo del Slide en la Zona Central (Completamente vacío de contenido decorativo inicial) */
+    #slide-viewport {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16 / 9;
+      min-height: 360px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      transition: background-color 0.15s ease, color 0.15s ease;
+      padding: 24px;
+      overflow: auto;
+      outline: none;
+    }
+
+    /* Tarjetas de sección en paneles */
+    .control-section {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .control-section.slide0-box {
+      border-top: 4px solid var(--slide0-accent);
+    }
+
+    .control-section.global-box {
+      border-top: 4px solid var(--slides-global-accent);
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Lista de Slides */
+    .slide-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .slide-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      background-color: #ffffff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      gap: 6px;
+    }
+
+    .slide-item:hover {
+      background-color: #f1f5f9;
+    }
+
+    .slide-item.active {
+      border-color: #2563eb;
+      background-color: #eff6ff;
+      font-weight: 600;
+    }
+
+    .slide-item.slide-zero-item {
+      border-left: 4px solid var(--slide0-accent);
+      background-color: #f0f9ff;
+    }
+
+    .slide-item.slide-zero-item.active {
+      background-color: #e0f2fe;
+      border-color: var(--slide0-accent);
+    }
+
+    .slide-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .slide-num-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: #475569;
+      color: #ffffff;
+      white-space: nowrap;
+    }
+
+    .slide-zero-item .slide-num-tag {
+      background-color: var(--slide0-accent);
+    }
+
+    .slide-name-text {
+      font-size: 0.88rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.25);
+      flex-shrink: 0;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #334155;
+    }
+
+    .color-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .color-input-wrapper input[type="color"] {
+      width: 42px;
+      height: 32px;
+      padding: 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      cursor: pointer;
+      background: none;
+    }
+
+    .color-hex-code {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #475569;
+    }
+
+    /* 3.3 Pie de página */
+    footer.app-footer {
+      background-color: var(--footer-bg);
+      color: #cbd5e1;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      z-index: 10;
+    }
+
+    .footer-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Notificaciones flotantes */
+    #notification-area {
+      position: fixed;
+      bottom: 52px;
+      right: 16px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 340px;
+    }
+
+    .toast-msg {
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsividad */
+    @media (max-width: 992px) {
+      .app-body {
+        flex-direction: column;
+        overflow: visible;
+      }
+      .side-panel,
+      .side-panel.right-panel {
+        width: 100%;
+        border-right: none;
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+      main.central-zone {
+        min-height: 420px;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3.1 CABECERA -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="app-title">
+        <span>Gestor Web de Slides</span>
+        <span id="db-status-indicator" class="status-badge">Conectando IndexedDB...</span>
+      </div>
+      <div class="w3-bar">
+        <button id="btn-create-slide-top" class="w3-button w3-teal w3-round w3-small w3-margin-right" title="Crear nuevo slide adicional">
+          + Nuevo Slide (1+)
+        </button>
+        <button id="btn-manual-save" class="w3-button w3-blue w3-round w3-small w3-margin-right" title="Guardar estado actual en IndexedDB">
+          Guardar Ahora
+        </button>
+        <button id="btn-export-json" class="w3-button w3-dark-grey w3-round w3-small w3-margin-right" title="Exportar respaldo JSON">
+          Exportar JSON
+        </button>
+        <label for="input-import-json" class="w3-button w3-dark-grey w3-round w3-small" title="Importar respaldo JSON" style="margin:0; cursor:pointer;">
+          Importar JSON
+        </label>
+        <input type="file" id="input-import-json" accept=".json" style="display:none;">
+      </div>
+    </div>
+  </header>
+
+  <!-- CUERPO DE LA APLICACIÓN -->
+  <div class="app-body">
+
+    <!-- PANEL IZQUIERDO: NAVEGACIÓN Y ADMINISTRACIÓN DE SLIDES -->
+    <aside class="side-panel" aria-label="Administración de slides">
+      
+      <!-- Navegación rápida y creación -->
+      <div class="control-section">
+        <h2 class="section-title">
+          <span>Índice de Slides</span>
+          <span id="total-slides-badge" class="w3-tag w3-round w3-small w3-blue-grey">1</span>
+        </h2>
+        <div class="w3-row-padding" style="margin: 0 -4px 10px -4px;">
+          <div class="w3-col s4" style="padding: 0 4px;">
+            <button id="btn-prev-slide" class="w3-button w3-light-grey w3-border w3-round w3-small w3-block" title="Slide anterior">&laquo; Ant.</button>
+          </div>
+          <div class="w3-col s4" style="padding: 0 4px;">
+            <button id="btn-go-slide0" class="w3-button w3-light-blue w3-round w3-small w3-block" title="Ir al Slide 0 Base">Slide 0</button>
+          </div>
+          <div class="w3-col s4" style="padding: 0 4px;">
+            <button id="btn-next-slide" class="w3-button w3-light-grey w3-border w3-round w3-small w3-block" title="Slide siguiente">Sig. &raquo;</button>
+          </div>
+        </div>
+
+        <button id="btn-create-slide-panel" class="w3-button w3-green w3-round w3-small w3-block" style="margin-bottom: 10px;">
+          + Añadir Slide Adicional
+        </button>
+
+        <ul id="slides-list-container" class="slide-list" aria-label="Lista de slides"></ul>
+      </div>
+
+      <!-- Acciones del Slide Seleccionado -->
+      <div class="control-section">
+        <h2 class="section-title">
+          <span>Slide Seleccionado</span>
+          <span id="selected-slide-badge" class="w3-tag w3-round w3-small w3-blue">Slide 0</span>
+        </h2>
+
+        <div class="form-group">
+          <label for="input-slide-name">Nombre identificativo del slide:</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="input-slide-name" class="w3-input w3-border w3-round w3-small" maxlength="60" placeholder="Nombre del slide">
+            <button id="btn-rename-slide" class="w3-button w3-blue-grey w3-round w3-small">Renombrar</button>
+          </div>
+        </div>
+
+        <div id="slide0-protection-notice" class="w3-panel w3-pale-blue w3-leftbar w3-border-blue w3-padding-small" style="font-size: 0.78rem; margin: 8px 0 0 0;">
+          <strong>Slide 0 (Base Permanente):</strong> Este slide es obligatorio y no puede ser eliminado.
+        </div>
+
+        <div id="additional-slide-actions" style="display:none; margin-top: 10px;">
+          <button id="btn-delete-current-slide" class="w3-button w3-red w3-round w3-small w3-block">
+            Eliminar este Slide
+          </button>
+        </div>
+      </div>
+
+      <!-- Eliminación Masiva Segura (Solo Slides 1+) -->
+      <div class="control-section">
+        <h2 class="section-title">Mantenimiento de Slides 1+</h2>
+        <button id="btn-delete-all-additional" class="w3-button w3-pale-red w3-border w3-border-red w3-text-red w3-round w3-small w3-block">
+          Eliminar todos los slides 1+
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- 3.2 ZONA CENTRAL (COMPLETAMENTE VACÍA EN SU ESTADO INICIAL) -->
+    <main class="central-zone" aria-label="Zona central de visualización de slide">
+      <div id="slide-viewport" role="region" aria-label="Lienzo del slide activo"></div>
+    </main>
+
+    <!-- PANEL DERECHO: ESTILOS DEL SLIDE 0 Y ESTILOS GLOBALES 1+ -->
+    <aside class="side-panel right-panel" aria-label="Configuración de estilos">
+
+      <!-- 5. SISTEMA DE ESTILOS EXCLUSIVO DEL SLIDE 0 -->
+      <div class="control-section slide0-box">
+        <h2 class="section-title">
+          <span>Estilos Exclusivos: Slide 0</span>
+          <span class="w3-tag w3-round w3-tiny w3-light-blue">Permanente</span>
+        </h2>
+        <p style="font-size: 0.76rem; color: #475569; margin: 0 0 10px 0;">
+          Los cambios aquí aplicados modifican y guardan automáticamente solo el Slide 0.
+        </p>
+
+        <div class="form-group">
+          <label for="s0-bg-color">Color de fondo (Slide 0):</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="s0-bg-color" value="#ffffff">
+            <span id="s0-bg-hex" class="color-hex-code">#ffffff</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="s0-text-color">Color de fuente (Slide 0):</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="s0-text-color" value="#1e293b">
+            <span id="s0-text-hex" class="color-hex-code">#1e293b</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="s0-font-family">Tipo de fuente (Slide 0):</label>
+          <select id="s0-font-family" class="w3-select w3-border w3-round w3-small">
+            <option value="'Segoe UI', sans-serif">Segoe UI (Estándar)</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="s0-font-size">Tamaño de fuente (Slide 0):</label>
+          <select id="s0-font-size" class="w3-select w3-border w3-round w3-small">
+            <option value="16px">16px (Pequeño)</option>
+            <option value="20px">20px (Normal)</option>
+            <option value="24px">24px (Mediano)</option>
+            <option value="32px">32px (Grande)</option>
+            <option value="40px">40px (Extra Grande)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 6. ESTILOS GLOBALES PARA LOS SLIDES 1 EN ADELANTE -->
+      <div class="control-section global-box">
+        <h2 class="section-title">
+          <span>Estilos Globales: Slides 1+</span>
+          <span id="global-pending-badge" class="w3-tag w3-round w3-tiny w3-amber" style="display:none;">Sin aplicar a existentes</span>
+        </h2>
+        <p style="font-size: 0.76rem; color: #475569; margin: 0 0 10px 0;">
+          Define el estilo de referencia para nuevos slides (1+) y aplica en bloque a los existentes sin afectar al Slide 0.
+        </p>
+
+        <div class="form-group">
+          <label for="global-bg-color">Color de fondo global (Slides 1+):</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="global-bg-color" value="#f8fafc">
+            <span id="global-bg-hex" class="color-hex-code">#f8fafc</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="global-text-color">Color de fuente global (Slides 1+):</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="global-text-color" value="#0f172a">
+            <span id="global-text-hex" class="color-hex-code">#0f172a</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="global-font-family">Tipo de fuente global (Slides 1+):</label>
+          <select id="global-font-family" class="w3-select w3-border w3-round w3-small">
+            <option value="'Segoe UI', sans-serif">Segoe UI (Estándar)</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="global-font-size">Tamaño de fuente global (Slides 1+):</label>
+          <select id="global-font-size" class="w3-select w3-border w3-round w3-small">
+            <option value="16px">16px (Pequeño)</option>
+            <option value="20px">20px (Normal)</option>
+            <option value="24px">24px (Mediano)</option>
+            <option value="32px">32px (Grande)</option>
+            <option value="40px">40px (Extra Grande)</option>
+          </select>
+        </div>
+
+        <button id="btn-apply-global-styles" class="w3-button w3-teal w3-round w3-small w3-block" style="font-weight:600;">
+          Aplicar estilos a todos los slides 1+
+        </button>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- Área de notificaciones -->
+  <div id="notification-area" aria-live="polite"></div>
+
+  <!-- 3.3 PIE DE PÁGINA -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div>
+        <strong>Sistema Web de Slides</strong> &bull; W3.CSS + IndexedDB (<code>webSlidesDB / presentations / main</code>)
+      </div>
+      <div id="footer-slide-summary">
+        Slide activo: <strong>Slide 0 (Base)</strong> | Slides adicionales (1+): <strong>0</strong>
+      </div>
+    </div>
+  </footer>
+
+  <!-- LÓGICA JAVASCRIPT VANILLA E INDEXEDDB -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* =========================================================================
+       * 1. CONSTANTES Y CONFIGURACIÓN DE INDEXEDDB + RESPALDO JUSTIFICADO
+       * ========================================================================= */
+      const DB_NAME = 'webSlidesDB';
+      const STORE_NAME = 'presentations';
+      const MAIN_RECORD_KEY = 'main';
+      // Respaldo justificado (Sección 2): solo actúa si el navegador bloquea IndexedDB en protocolo file://
+      const FALLBACK_STORAGE_KEY = 'webSlidesDB_presentations_main_backup';
+
+      const DEFAULT_SLIDE_0_STYLES = {
+        backgroundColor: '#ffffff',
+        textColor: '#1e293b',
+        fontFamily: "'Segoe UI', sans-serif",
+        fontSize: '24px'
+      };
+
+      const DEFAULT_GLOBAL_STYLES = {
+        backgroundColor: '#f8fafc',
+        textColor: '#0f172a',
+        fontFamily: "'Segoe UI', sans-serif",
+        fontSize: '24px'
+      };
+
+      /* =========================================================================
+       * 2. ESTADO CENTRALIZADO DE LA APLICACIÓN
+       * ========================================================================= */
+      const appState = {
+        db: null,
+        dbOpenPromise: null,
+        usingFallbackStorage: false,
+        saveQueuePromise: Promise.resolve(),
+        selectedSlideNumber: 0, // 0 para Slide 0, 1..N para slides adicionales
+        hasUnappliedGlobalChanges: false,
+        presentation: {
+          id: MAIN_RECORD_KEY,
+          updatedAt: null,
+          nextInternalId: 1,
+          slide0: {
+            number: 0,
+            id: 'slide-0-permanent',
+            name: 'Slide 0 (Base)',
+            isPermanent: true,
+            styles: { ...DEFAULT_SLIDE_0_STYLES }
+          },
+          globalStyles: { ...DEFAULT_GLOBAL_STYLES },
+          additionalSlides: []
+        }
+      };
+
+      /* =========================================================================
+       * 3. REFERENCIAS AL DOM
+       * ========================================================================= */
+      const dom = {
+        dbStatusIndicator: document.getElementById('db-status-indicator'),
+        btnCreateSlideTop: document.getElementById('btn-create-slide-top'),
+        btnCreateSlidePanel: document.getElementById('btn-create-slide-panel'),
+        btnManualSave: document.getElementById('btn-manual-save'),
+        btnExportJson: document.getElementById('btn-export-json'),
+        inputImportJson: document.getElementById('input-import-json'),
+
+        btnPrevSlide: document.getElementById('btn-prev-slide'),
+        btnGoSlide0: document.getElementById('btn-go-slide0'),
+        btnNextSlide: document.getElementById('btn-next-slide'),
+
+        totalSlidesBadge: document.getElementById('total-slides-badge'),
+        slidesListContainer: document.getElementById('slides-list-container'),
+
+        selectedSlideBadge: document.getElementById('selected-slide-badge'),
+        inputSlideName: document.getElementById('input-slide-name'),
+        btnRenameSlide: document.getElementById('btn-rename-slide'),
+        slide0ProtectionNotice: document.getElementById('slide0-protection-notice'),
+        additionalSlideActions: document.getElementById('additional-slide-actions'),
+        btnDeleteCurrentSlide: document.getElementById('btn-delete-current-slide'),
+        btnDeleteAllAdditional: document.getElementById('btn-delete-all-additional'),
+
+        slideViewport: document.getElementById('slide-viewport'),
+
+        // Controles exclusivos del Slide 0
+        s0BgColor: document.getElementById('s0-bg-color'),
+        s0BgHex: document.getElementById('s0-bg-hex'),
+        s0TextColor: document.getElementById('s0-text-color'),
+        s0TextHex: document.getElementById('s0-text-hex'),
+        s0FontFamily: document.getElementById('s0-font-family'),
+        s0FontSize: document.getElementById('s0-font-size'),
+
+        // Controles globales de los Slides 1+
+        globalPendingBadge: document.getElementById('global-pending-badge'),
+        globalBgColor: document.getElementById('global-bg-color'),
+        globalBgHex: document.getElementById('global-bg-hex'),
+        globalTextColor: document.getElementById('global-text-color'),
+        globalTextHex: document.getElementById('global-text-hex'),
+        globalFontFamily: document.getElementById('global-font-family'),
+        globalFontSize: document.getElementById('global-font-size'),
+        btnApplyGlobalStyles: document.getElementById('btn-apply-global-styles'),
+
+        footerSlideSummary: document.getElementById('footer-slide-summary'),
+        notificationArea: document.getElementById('notification-area')
+      };
+
+      /* =========================================================================
+       * 4. UTILIDADES Y VALIDACIONES DE INTEGRIDAD
+       * ========================================================================= */
+      function showNotification(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = 'toast-msg';
+        if (type === 'success') {
+          toast.style.backgroundColor = '#065f46';
+        } else if (type === 'error') {
+          toast.style.backgroundColor = '#991b1b';
+        } else if (type === 'warning') {
+          toast.style.backgroundColor = '#92400e';
+        } else {
+          toast.style.backgroundColor = '#1e293b';
+        }
+        toast.textContent = message;
+        dom.notificationArea.appendChild(toast);
+
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 3800);
+      }
+
+      function updateDbStatusUI(text, state) {
+        dom.dbStatusIndicator.textContent = text;
+        dom.dbStatusIndicator.className = 'status-badge';
+        if (state === 'ok') {
+          dom.dbStatusIndicator.classList.add('ok');
+        } else if (state === 'warning') {
+          dom.dbStatusIndicator.classList.add('warning');
+        } else if (state === 'error') {
+          dom.dbStatusIndicator.classList.add('error');
+        }
+      }
+
+      function sanitizeHexColor(value, fallback) {
+        if (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value.trim())) {
+          return value.trim().toLowerCase();
+        }
+        return fallback;
+      }
+
+      function sanitizeStyleObject(rawStyles, defaults) {
+        if (!rawStyles || typeof rawStyles !== 'object') {
+          return { ...defaults };
+        }
+        return {
+          backgroundColor: sanitizeHexColor(rawStyles.backgroundColor, defaults.backgroundColor),
+          textColor: sanitizeHexColor(rawStyles.textColor, defaults.textColor),
+          fontFamily: typeof rawStyles.fontFamily === 'string' && rawStyles.fontFamily.trim() !== ''
+            ? rawStyles.fontFamily
+            : defaults.fontFamily,
+          fontSize: typeof rawStyles.fontSize === 'string' && rawStyles.fontSize.trim() !== ''
+            ? rawStyles.fontSize
+            : defaults.fontSize
+        };
+      }
+
+      /**
+       * Garantiza que la numeración de los slides adicionales sea 1, 2, 3...
+       * sin duplicados ni números negativos, manteniendo su identificador interno único.
+       */
+      function normalizeAdditionalSlides(rawSlides, fallbackGlobalStyles) {
+        if (!Array.isArray(rawSlides)) return [];
+        const normalized = [];
+        rawSlides.forEach((item, index) => {
+          if (!item || typeof item !== 'object') return;
+          const slideNumber = index + 1;
+          const internalId = typeof item.id === 'string' && item.id.trim() !== ''
+            ? item.id
+            : 'slide-item-' + Date.now() + '-' + slideNumber;
+          const slideName = typeof item.name === 'string' && item.name.trim() !== ''
+            ? item.name.trim()
+            : 'Slide ' + slideNumber;
+
+          normalized.push({
+            id: internalId,
+            number: slideNumber,
+            name: slideName,
+            styles: sanitizeStyleObject(item.styles, fallbackGlobalStyles)
+          });
+        });
+        return normalized;
+      }
+
+      /**
+       * Valida y normaliza una estructura de presentación cargada desde IndexedDB o archivo JSON.
+       */
+      function validateAndNormalizePresentation(rawRecord) {
+        if (!rawRecord || typeof rawRecord !== 'object') {
+          return null;
+        }
+
+        const validGlobalStyles = sanitizeStyleObject(rawRecord.globalStyles, DEFAULT_GLOBAL_STYLES);
+
+        const rawSlide0 = rawRecord.slide0 && typeof rawRecord.slide0 === 'object' ? rawRecord.slide0 : {};
+        const validSlide0 = {
+          number: 0,
+          id: 'slide-0-permanent',
+          name: typeof rawSlide0.name === 'string' && rawSlide0.name.trim() !== ''
+            ? rawSlide0.name.trim()
+            : 'Slide 0 (Base)',
+          isPermanent: true,
+          styles: sanitizeStyleObject(rawSlide0.styles, DEFAULT_SLIDE_0_STYLES)
+        };
+
+        const validAdditionalSlides = normalizeAdditionalSlides(rawRecord.additionalSlides, validGlobalStyles);
+
+        let nextId = typeof rawRecord.nextInternalId === 'number' && rawRecord.nextInternalId > 0
+          ? Math.floor(rawRecord.nextInternalId)
+          : validAdditionalSlides.length + 1;
+
+        if (nextId <= validAdditionalSlides.length) {
+          nextId = validAdditionalSlides.length + 1;
+        }
+
+        return {
+          id: MAIN_RECORD_KEY,
+          updatedAt: rawRecord.updatedAt || new Date().toISOString(),
+          nextInternalId: nextId,
+          slide0: validSlide0,
+          globalStyles: validGlobalStyles,
+          additionalSlides: validAdditionalSlides
+        };
+      }
+
+      function recalculateAdditionalSlideNumbers() {
+        appState.presentation.additionalSlides.forEach((slide, idx) => {
+          slide.number = idx + 1;
+        });
+      }
+
+      /* =========================================================================
+       * 5. CAPA DE PERSISTENCIA INDEXEDDB CON AUTO-RECONEXIÓN Y MIGRACIÓN DE VERSIÓN
+       * ========================================================================= */
+      /**
+       * Abre la base de datos sin forzar una versión menor a la existente (evita VersionError)
+       * y garantiza que el almacén 'presentations' exista mediante migración segura si hace falta.
+       */
+      function openDatabaseConnection() {
+        if (appState.db) {
+          return Promise.resolve(appState.db);
+        }
+        if (appState.dbOpenPromise) {
+          return appState.dbOpenPromise;
+        }
+
+        appState.dbOpenPromise = new Promise((resolve, reject) => {
+          const idb = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+          if (!idb) {
+            appState.dbOpenPromise = null;
+            reject(new Error('IndexedDB no está disponible en este entorno.'));
+            return;
+          }
+
+          let initialRequest;
+          try {
+            // Abrir sin número de versión fijo evita "VersionError" si la DB previa tenía versión > 1
+            initialRequest = idb.open(DB_NAME);
+          } catch (err) {
+            appState.dbOpenPromise = null;
+            reject(err);
+            return;
+          }
+
+          initialRequest.onupgradeneeded = function (event) {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+          };
+
+          initialRequest.onsuccess = function (event) {
+            const db = event.target.result;
+
+            db.onversionchange = function () {
+              db.close();
+              appState.db = null;
+            };
+
+            // Si la base de datos existía pero no tenía el almacén 'presentations', actualizamos su versión
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              const nextVersion = db.version + 1;
+              db.close();
+
+              const upgradeReq = idb.open(DB_NAME, nextVersion);
+              upgradeReq.onupgradeneeded = function (upEvent) {
+                const upgradedDb = upEvent.target.result;
+                if (!upgradedDb.objectStoreNames.contains(STORE_NAME)) {
+                  upgradedDb.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                }
+              };
+              upgradeReq.onsuccess = function (upEvent) {
+                const upgradedDb = upEvent.target.result;
+                upgradedDb.onversionchange = function () {
+                  upgradedDb.close();
+                  appState.db = null;
+                };
+                appState.db = upgradedDb;
+                appState.dbOpenPromise = null;
+                resolve(upgradedDb);
+              };
+              upgradeReq.onerror = function (upEvent) {
+                appState.dbOpenPromise = null;
+                reject(upEvent.target.error || new Error('No se pudo migrar el almacén en IndexedDB.'));
+              };
+              return;
+            }
+
+            appState.db = db;
+            appState.dbOpenPromise = null;
+            resolve(db);
+          };
+
+          initialRequest.onerror = function (event) {
+            appState.dbOpenPromise = null;
+            reject(event.target.error || new Error('Bloqueo o error al abrir IndexedDB.'));
+          };
+
+          initialRequest.onblocked = function () {
+            appState.dbOpenPromise = null;
+            showNotification('IndexedDB está bloqueada por otra pestaña abierta.', 'warning');
+          };
+        });
+
+        return appState.dbOpenPromise;
+      }
+
+      /**
+       * Respaldo en localStorage (Sección 2): únicamente si el navegador bloquea IndexedDB
+       * (por ejemplo, Firefox/Safari abriendo archivos locales vía file:// o modo privado estricto).
+       */
+      function readFromFallbackStorage() {
+        try {
+          if (!window.localStorage) return null;
+          const raw = window.localStorage.getItem(FALLBACK_STORAGE_KEY);
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function writeToFallbackStorage(presentationData) {
+        if (!window.localStorage) {
+          throw new Error('Ni IndexedDB ni localStorage están permitidos por el navegador.');
+        }
+        const payload = JSON.parse(JSON.stringify(presentationData));
+        payload.id = MAIN_RECORD_KEY;
+        payload.updatedAt = new Date().toISOString();
+        window.localStorage.setItem(FALLBACK_STORAGE_KEY, JSON.stringify(payload));
+        return payload;
+      }
+
+      function readPresentationFromDB(db) {
+        return new Promise((resolve, reject) => {
+          try {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            let request;
+
+            if (store.keyPath === 'id' || store.keyPath === null) {
+              request = store.get(MAIN_RECORD_KEY);
+            } else {
+              request = store.get(MAIN_RECORD_KEY);
+            }
+
+            request.onsuccess = function (event) {
+              resolve(event.target.result || null);
+            };
+
+            request.onerror = function (event) {
+              reject(event.target.error || new Error('No se pudo leer la presentación en IndexedDB.'));
+            };
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+
+      function writePresentationToDB(db, presentationData) {
+        return new Promise((resolve, reject) => {
+          try {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+
+            const payload = JSON.parse(JSON.stringify(presentationData));
+            payload.id = MAIN_RECORD_KEY;
+            payload.updatedAt = new Date().toISOString();
+
+            // Soporte adaptable tanto si el objectStore existente usa keyPath 'id' como si usa out-of-line keys
+            let request;
+            if (store.keyPath === null) {
+              request = store.put(payload, MAIN_RECORD_KEY);
+            } else {
+              if (typeof store.keyPath === 'string' && store.keyPath !== 'id') {
+                payload[store.keyPath] = MAIN_RECORD_KEY;
+              }
+              request = store.put(payload);
+            }
+
+            transaction.oncomplete = function () {
+              resolve(payload);
+            };
+
+            transaction.onerror = function (event) {
+              reject(event.target.error || new Error('Error en la transacción de escritura en IndexedDB.'));
+            };
+
+            request.onerror = function (event) {
+              reject(event.target.error || new Error('Error al guardar el registro en IndexedDB.'));
+            };
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+
+      /**
+       * Encola las operaciones de guardado, intenta reconectar a IndexedDB si aún no estaba abierta,
+       * y usa localStorage como respaldo justificado si el navegador restringe IndexedDB en file://.
+       */
+      function persistCurrentState(reasonMessage, showToastOnSuccess = false) {
+        appState.saveQueuePromise = appState.saveQueuePromise.then(async () => {
+          try {
+            // Intentar obtener o reabrir conexión con IndexedDB antes de dar error
+            if (!appState.db && !appState.usingFallbackStorage) {
+              try {
+                await openDatabaseConnection();
+              } catch (openErr) {
+                appState.usingFallbackStorage = true;
+              }
+            }
+
+            if (appState.db && !appState.usingFallbackStorage) {
+              updateDbStatusUI('Guardando en IndexedDB...', 'info');
+              const savedRecord = await writePresentationToDB(appState.db, appState.presentation);
+              appState.presentation.updatedAt = savedRecord.updatedAt;
+              // Sincroniza copia de respaldo preventiva
+              try { writeToFallbackStorage(appState.presentation); } catch (_) {}
+              updateDbStatusUI('Guardado en IndexedDB', 'ok');
+              if (showToastOnSuccess && reasonMessage) {
+                showNotification(reasonMessage, 'success');
+              }
+              return true;
+            } else {
+              // Respaldo justificado cuando IndexedDB es bloqueado por protocolo file:// o navegador
+              const savedFallback = writeToFallbackStorage(appState.presentation);
+              appState.presentation.updatedAt = savedFallback.updatedAt;
+              updateDbStatusUI('Guardado (Modo Local file://)', 'warning');
+              if (showToastOnSuccess && reasonMessage) {
+                showNotification(reasonMessage, 'success');
+              }
+              return true;
+            }
+          } catch (error) {
+            console.error('Error de persistencia:', error);
+            // Último intento mediante respaldo local si la transacción de IndexedDB falló inesperadamente
+            try {
+              const savedFallback = writeToFallbackStorage(appState.presentation);
+              appState.presentation.updatedAt = savedFallback.updatedAt;
+              appState.usingFallbackStorage = true;
+              updateDbStatusUI('Guardado en Respaldo Local', 'warning');
+              if (showToastOnSuccess && reasonMessage) {
+                showNotification(reasonMessage, 'success');
+              }
+              return true;
+            } catch (fallbackError) {
+              updateDbStatusUI('Error de almacenamiento', 'error');
+              showNotification('Error al guardar los cambios: ' + error.message, 'error');
+              return false;
+            }
+          }
+        });
+
+        return appState.saveQueuePromise;
+      }
+
+      /* =========================================================================
+       * 6. OPERACIONES DE SLIDES Y ESTILOS
+       * ========================================================================= */
+      function getSelectedSlideObject() {
+        if (appState.selectedSlideNumber === 0) {
+          return appState.presentation.slide0;
+        }
+        const found = appState.presentation.additionalSlides.find(
+          (s) => s.number === appState.selectedSlideNumber
+        );
+        if (!found) {
+          appState.selectedSlideNumber = 0;
+          return appState.presentation.slide0;
+        }
+        return found;
+      }
+
+      /**
+       * Crea un nuevo slide adicional (1+) heredando los estilos globales actuales.
+       * Nunca altera el Slide 0.
+       */
+      async function createNewAdditionalSlide() {
+        recalculateAdditionalSlideNumbers();
+        const newSlideNumber = appState.presentation.additionalSlides.length + 1;
+        const internalCounter = appState.presentation.nextInternalId++;
+
+        const newSlide = {
+          id: 'slide-id-' + internalCounter + '-' + Date.now(),
+          number: newSlideNumber,
+          name: 'Slide ' + newSlideNumber,
+          styles: { ...appState.presentation.globalStyles }
+        };
+
+        appState.presentation.additionalSlides.push(newSlide);
+        appState.selectedSlideNumber = newSlideNumber;
+
+        renderAll();
+        await persistCurrentState('Slide ' + newSlideNumber + ' creado y guardado.', true);
+      }
+
+      /**
+       * Actualiza exclusivamente los estilos del Slide 0 y los persiste.
+       */
+      async function updateSlide0StylesFromControls() {
+        const s0Styles = appState.presentation.slide0.styles;
+        s0Styles.backgroundColor = sanitizeHexColor(dom.s0BgColor.value, DEFAULT_SLIDE_0_STYLES.backgroundColor);
+        s0Styles.textColor = sanitizeHexColor(dom.s0TextColor.value, DEFAULT_SLIDE_0_STYLES.textColor);
+        s0Styles.fontFamily = dom.s0FontFamily.value;
+        s0Styles.fontSize = dom.s0FontSize.value;
+
+        dom.s0BgHex.textContent = s0Styles.backgroundColor;
+        dom.s0TextHex.textContent = s0Styles.textColor;
+
+        renderSlideList();
+        if (appState.selectedSlideNumber === 0) {
+          renderCentralViewport();
+        }
+
+        await persistCurrentState('Estilos del Slide 0 actualizados.', false);
+      }
+
+      /**
+       * Actualiza la configuración global vigente (para futuros slides y lista para aplicarse a todos los 1+).
+       */
+      async function updateGlobalConfigFromControls() {
+        const gStyles = appState.presentation.globalStyles;
+        gStyles.backgroundColor = sanitizeHexColor(dom.globalBgColor.value, DEFAULT_GLOBAL_STYLES.backgroundColor);
+        gStyles.textColor = sanitizeHexColor(dom.globalTextColor.value, DEFAULT_GLOBAL_STYLES.textColor);
+        gStyles.fontFamily = dom.globalFontFamily.value;
+        gStyles.fontSize = dom.globalFontSize.value;
+
+        dom.globalBgHex.textContent = gStyles.backgroundColor;
+        dom.globalTextHex.textContent = gStyles.textColor;
+
+        if (appState.presentation.additionalSlides.length > 0) {
+          appState.hasUnappliedGlobalChanges = true;
+          dom.globalPendingBadge.style.display = 'inline-block';
+        }
+
+        await persistCurrentState('Configuración de estilo global guardada.', false);
+      }
+
+      /**
+       * 6.1 Aplicación global de estilos a todos los slides adicionales (1+).
+       * Conserva intacto el Slide 0.
+       */
+      async function applyGlobalStylesToAllAdditionalSlides() {
+        const gStyles = appState.presentation.globalStyles;
+        const additionalCount = appState.presentation.additionalSlides.length;
+
+        appState.presentation.additionalSlides.forEach((slide) => {
+          slide.styles = {
+            backgroundColor: gStyles.backgroundColor,
+            textColor: gStyles.textColor,
+            fontFamily: gStyles.fontFamily,
+            fontSize: gStyles.fontSize
+          };
+        });
+
+        appState.hasUnappliedGlobalChanges = false;
+        dom.globalPendingBadge.style.display = 'none';
+
+        renderAll();
+
+        if (additionalCount === 0) {
+          await persistCurrentState('Estilos globales guardados para futuros slides 1+.', true);
+        } else {
+          await persistCurrentState(
+            'Estilos globales aplicados a los ' + additionalCount + ' slides adicionales (1+). Slide 0 intacto.',
+            true
+          );
+        }
+      }
+
+      /**
+       * Renombra el slide actualmente seleccionado (permite renombrar Slide 0 o cualquier Slide 1+).
+       */
+      async function renameSelectedSlide() {
+        const rawName = dom.inputSlideName.value.trim();
+        if (!rawName) {
+          showNotification('El nombre del slide no puede estar vacío.', 'warning');
+          const current = getSelectedSlideObject();
+          dom.inputSlideName.value = current.name;
+          return;
+        }
+
+        const currentSlide = getSelectedSlideObject();
+        currentSlide.name = rawName;
+
+        renderAll();
+        await persistCurrentState('Nombre del Slide ' + currentSlide.number + ' actualizado.', true);
+      }
+
+      /**
+       * Elimina únicamente el slide adicional seleccionado (bloquea estrictamente el Slide 0).
+       */
+      async function deleteSelectedAdditionalSlide() {
+        if (appState.selectedSlideNumber === 0) {
+          showNotification('Operación denegada: El Slide 0 es permanente y no puede eliminarse.', 'error');
+          return;
+        }
+
+        const targetNumber = appState.selectedSlideNumber;
+        const index = appState.presentation.additionalSlides.findIndex(
+          (s) => s.number === targetNumber
+        );
+
+        if (index === -1) {
+          return;
+        }
+
+        appState.presentation.additionalSlides.splice(index, 1);
+        recalculateAdditionalSlideNumbers();
+
+        if (appState.presentation.additionalSlides.length === 0) {
+          appState.selectedSlideNumber = 0;
+        } else if (targetNumber > appState.presentation.additionalSlides.length) {
+          appState.selectedSlideNumber = appState.presentation.additionalSlides.length;
+        } else {
+          appState.selectedSlideNumber = targetNumber;
+        }
+
+        renderAll();
+        await persistCurrentState('Slide eliminado y numeración actualizada.', true);
+      }
+
+      /**
+       * Elimina todos los slides adicionales (1+), preservando intacto el Slide 0.
+       */
+      async function deleteAllAdditionalSlides() {
+        const count = appState.presentation.additionalSlides.length;
+        if (count === 0) {
+          showNotification('No hay slides adicionales (1+) para eliminar.', 'info');
+          return;
+        }
+
+        const confirmed = window.confirm(
+          '¿Deseas eliminar los ' + count + ' slides adicionales (1+)? El Slide 0 conservará toda su configuración.'
+        );
+        if (!confirmed) return;
+
+        appState.presentation.additionalSlides = [];
+        appState.selectedSlideNumber = 0;
+        appState.hasUnappliedGlobalChanges = false;
+        dom.globalPendingBadge.style.display = 'none';
+
+        renderAll();
+        await persistCurrentState('Todos los slides adicionales (1+) fueron eliminados. Slide 0 intacto.', true);
+      }
+
+      /* =========================================================================
+       * 7. RENDERIZADO DE LA INTERFAZ
+       * ========================================================================= */
+      function syncStyleControlsWithState() {
+        const s0 = appState.presentation.slide0.styles;
+        dom.s0BgColor.value = s0.backgroundColor;
+        dom.s0BgHex.textContent = s0.backgroundColor;
+        dom.s0TextColor.value = s0.textColor;
+        dom.s0TextHex.textContent = s0.textColor;
+        dom.s0FontFamily.value = s0.fontFamily;
+        dom.s0FontSize.value = s0.fontSize;
+
+        const g = appState.presentation.globalStyles;
+        dom.globalBgColor.value = g.backgroundColor;
+        dom.globalBgHex.textContent = g.backgroundColor;
+        dom.globalTextColor.value = g.textColor;
+        dom.globalTextHex.textContent = g.textColor;
+        dom.globalFontFamily.value = g.fontFamily;
+        dom.globalFontSize.value = g.fontSize;
+      }
+
+      function renderSlideList() {
+        dom.slidesListContainer.textContent = '';
+
+        // 1. Renderizar siempre el Slide 0 en primer lugar y diferenciado
+        const s0 = appState.presentation.slide0;
+        const li0 = document.createElement('li');
+        li0.className = 'slide-item slide-zero-item' + (appState.selectedSlideNumber === 0 ? ' active' : '');
+        li0.setAttribute('data-slide-number', '0');
+
+        const info0 = document.createElement('div');
+        info0.className = 'slide-info';
+
+        const tag0 = document.createElement('span');
+        tag0.className = 'slide-num-tag';
+        tag0.textContent = 'Slide 0 (Base)';
+
+        const name0 = document.createElement('span');
+        name0.className = 'slide-name-text';
+        name0.textContent = s0.name;
+
+        info0.appendChild(tag0);
+        info0.appendChild(name0);
+
+        const dot0 = document.createElement('span');
+        dot0.className = 'color-dot';
+        dot0.style.backgroundColor = s0.styles.backgroundColor;
+        dot0.title = 'Fondo: ' + s0.styles.backgroundColor;
+
+        li0.appendChild(info0);
+        li0.appendChild(dot0);
+        li0.addEventListener('click', () => {
+          selectSlide(0);
+        });
+
+        dom.slidesListContainer.appendChild(li0);
+
+        // 2. Renderizar los slides adicionales (1, 2, 3...)
+        appState.presentation.additionalSlides.forEach((slide) => {
+          const li = document.createElement('li');
+          li.className = 'slide-item' + (appState.selectedSlideNumber === slide.number ? ' active' : '');
+          li.setAttribute('data-slide-number', String(slide.number));
+
+          const info = document.createElement('div');
+          info.className = 'slide-info';
+
+          const tag = document.createElement('span');
+          tag.className = 'slide-num-tag';
+          tag.textContent = 'Slide ' + slide.number;
+
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'slide-name-text';
+          nameSpan.textContent = slide.name;
+
+          info.appendChild(tag);
+          info.appendChild(nameSpan);
+
+          const rightControls = document.createElement('div');
+          rightControls.style.display = 'flex';
+          rightControls.style.alignItems = 'center';
+          rightControls.style.gap = '6px';
+
+          const dot = document.createElement('span');
+          dot.className = 'color-dot';
+          dot.style.backgroundColor = slide.styles.backgroundColor;
+          dot.title = 'Fondo: ' + slide.styles.backgroundColor;
+
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'w3-button w3-tiny w3-pale-red w3-text-red w3-round';
+          delBtn.textContent = '✕';
+          delBtn.title = 'Eliminar Slide ' + slide.number;
+          delBtn.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            appState.selectedSlideNumber = slide.number;
+            await deleteSelectedAdditionalSlide();
+          });
+
+          rightControls.appendChild(dot);
+          rightControls.appendChild(delBtn);
+
+          li.appendChild(info);
+          li.appendChild(rightControls);
+
+          li.addEventListener('click', () => {
+            selectSlide(slide.number);
+          });
+
+          dom.slidesListContainer.appendChild(li);
+        });
+
+        const totalSlides = 1 + appState.presentation.additionalSlides.length;
+        dom.totalSlidesBadge.textContent = String(totalSlides);
+      }
+
+      function renderSelectedSlidePanel() {
+        const activeSlide = getSelectedSlideObject();
+        const isSlide0 = activeSlide.number === 0;
+
+        dom.selectedSlideBadge.textContent = isSlide0
+          ? 'Slide 0 (Base)'
+          : 'Slide ' + activeSlide.number;
+        dom.selectedSlideBadge.className = isSlide0
+          ? 'w3-tag w3-round w3-small w3-blue'
+          : 'w3-tag w3-round w3-small w3-teal';
+
+        dom.inputSlideName.value = activeSlide.name;
+
+        if (isSlide0) {
+          dom.slide0ProtectionNotice.style.display = 'block';
+          dom.additionalSlideActions.style.display = 'none';
+        } else {
+          dom.slide0ProtectionNotice.style.display = 'none';
+          dom.additionalSlideActions.style.display = 'block';
+        }
+
+        const maxSlideNumber = appState.presentation.additionalSlides.length;
+        dom.btnPrevSlide.disabled = appState.selectedSlideNumber <= 0;
+        dom.btnNextSlide.disabled = appState.selectedSlideNumber >= maxSlideNumber;
+        dom.btnDeleteAllAdditional.disabled = maxSlideNumber === 0;
+      }
+
+      /**
+       * 3.2 Zona central: Aplica las propiedades visuales al lienzo del slide activo,
+       * manteniéndolo completamente libre de textos de bienvenida, tarjetas o elementos decorativos.
+       */
+      function renderCentralViewport() {
+        const activeSlide = getSelectedSlideObject();
+        const styles = activeSlide.styles;
+
+        dom.slideViewport.style.backgroundColor = styles.backgroundColor;
+        dom.slideViewport.style.color = styles.textColor;
+        dom.slideViewport.style.fontFamily = styles.fontFamily;
+        dom.slideViewport.style.fontSize = styles.fontSize;
+        dom.slideViewport.setAttribute('data-active-slide', String(activeSlide.number));
+      }
+
+      function renderFooterSummary() {
+        const activeSlide = getSelectedSlideObject();
+        const additionalCount = appState.presentation.additionalSlides.length;
+
+        dom.footerSlideSummary.textContent = '';
+        const spanActive = document.createElement('span');
+        spanActive.textContent = 'Slide activo: ' + activeSlide.number + ' (' + activeSlide.name + ') | Slides adicionales (1+): ' + additionalCount;
+        dom.footerSlideSummary.appendChild(spanActive);
+      }
+
+      function renderAll() {
+        recalculateAdditionalSlideNumbers();
+        renderSlideList();
+        renderSelectedSlidePanel();
+        renderCentralViewport();
+        renderFooterSummary();
+      }
+
+      function selectSlide(slideNumber) {
+        if (slideNumber < 0) return;
+        const maxSlide = appState.presentation.additionalSlides.length;
+        if (slideNumber > maxSlide) {
+          appState.selectedSlideNumber = maxSlide;
+        } else {
+          appState.selectedSlideNumber = slideNumber;
+        }
+        renderAll();
+      }
+
+      /* =========================================================================
+       * 8. EXPORTACIÓN E IMPORTACIÓN SEGURA DE PRESENTACIONES (JSON)
+       * ========================================================================= */
+      function exportPresentationToJson() {
+        try {
+          const dataStr = JSON.stringify(appState.presentation, null, 2);
+          const blob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'presentacion-slides-backup.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showNotification('Configuración exportada correctamente.', 'success');
+        } catch (err) {
+          showNotification('Error al exportar la presentación: ' + err.message, 'error');
+        }
+      }
+
+      function importPresentationFromJsonFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function (ev) {
+          try {
+            const parsed = JSON.parse(ev.target.result);
+            const validated = validateAndNormalizePresentation(parsed);
+            if (!validated) {
+              throw new Error('El archivo no contiene una estructura de presentación válida.');
+            }
+            appState.presentation = validated;
+            appState.selectedSlideNumber = 0;
+            appState.hasUnappliedGlobalChanges = false;
+            dom.globalPendingBadge.style.display = 'none';
+
+            syncStyleControlsWithState();
+            renderAll();
+            await persistCurrentState('Presentación importada y guardada.', true);
+          } catch (err) {
+            showNotification('Archivo JSON inválido: ' + err.message, 'error');
+          } finally {
+            dom.inputImportJson.value = '';
+          }
+        };
+        reader.onerror = function () {
+          showNotification('Error al leer el archivo seleccionado.', 'error');
+          dom.inputImportJson.value = '';
+        };
+        reader.readAsText(file);
+      }
+
+      /* =========================================================================
+       * 9. REGISTRO DE EVENTOS (SIN DUPLICADOS)
+       * ========================================================================= */
+      function bindEvents() {
+        // Creación de slides adicionales (1+)
+        dom.btnCreateSlideTop.addEventListener('click', createNewAdditionalSlide);
+        dom.btnCreateSlidePanel.addEventListener('click', createNewAdditionalSlide);
+
+        // Guardado manual
+        dom.btnManualSave.addEventListener('click', () => {
+          persistCurrentState('Guardado manual completado.', true);
+        });
+
+        // Exportar / Importar
+        dom.btnExportJson.addEventListener('click', exportPresentationToJson);
+        dom.inputImportJson.addEventListener('change', (ev) => {
+          if (ev.target.files && ev.target.files[0]) {
+            importPresentationFromJsonFile(ev.target.files[0]);
+          }
+        });
+
+        // Navegación entre slides
+        dom.btnPrevSlide.addEventListener('click', () => {
+          if (appState.selectedSlideNumber > 0) {
+            selectSlide(appState.selectedSlideNumber - 1);
+          }
+        });
+
+        dom.btnGoSlide0.addEventListener('click', () => {
+          selectSlide(0);
+        });
+
+        dom.btnNextSlide.addEventListener('click', () => {
+          const max = appState.presentation.additionalSlides.length;
+          if (appState.selectedSlideNumber < max) {
+            selectSlide(appState.selectedSlideNumber + 1);
+          }
+        });
+
+        // Renombrado de slide activo
+        dom.btnRenameSlide.addEventListener('click', renameSelectedSlide);
+        dom.inputSlideName.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            renameSelectedSlide();
+          }
+        });
+
+        // Eliminación individual y masiva (solo slides 1+)
+        dom.btnDeleteCurrentSlide.addEventListener('click', deleteSelectedAdditionalSlide);
+        dom.btnDeleteAllAdditional.addEventListener('click', deleteAllAdditionalSlides);
+
+        // Controles exclusivos del Slide 0 (aplicación y guardado inmediato)
+        dom.s0BgColor.addEventListener('input', updateSlide0StylesFromControls);
+        dom.s0TextColor.addEventListener('input', updateSlide0StylesFromControls);
+        dom.s0FontFamily.addEventListener('change', updateSlide0StylesFromControls);
+        dom.s0FontSize.addEventListener('change', updateSlide0StylesFromControls);
+
+        // Controles de estilo global de Slides 1+
+        dom.globalBgColor.addEventListener('input', updateGlobalConfigFromControls);
+        dom.globalTextColor.addEventListener('input', updateGlobalConfigFromControls);
+        dom.globalFontFamily.addEventListener('change', updateGlobalConfigFromControls);
+        dom.globalFontSize.addEventListener('change', updateGlobalConfigFromControls);
+
+        // Botón para aplicar estilos globales a todos los slides 1+
+        dom.btnApplyGlobalStyles.addEventListener('click', applyGlobalStylesToAllAdditionalSlides);
+      }
+
+      /* =========================================================================
+       * 10. INICIALIZACIÓN Y RECUPERACIÓN DESDE INDEXEDDB
+       * ========================================================================= */
+      async function initializeApp() {
+        bindEvents();
+
+        try {
+          const db = await openDatabaseConnection();
+          const existingRecord = await readPresentationFromDB(db);
+
+          if (existingRecord) {
+            const validated = validateAndNormalizePresentation(existingRecord);
+            if (validated) {
+              appState.presentation = validated;
+              updateDbStatusUI('Datos recuperados de IndexedDB', 'ok');
+            } else {
+              await persistCurrentState('Estructura inicial restaurada en IndexedDB.', false);
+            }
+          } else {
+            // Comprobar si existía un respaldo local previo antes de inicializar desde cero
+            const fallbackRecord = validateAndNormalizePresentation(readFromFallbackStorage());
+            if (fallbackRecord) {
+              appState.presentation = fallbackRecord;
+            }
+            await persistCurrentState('Presentación inicializada con Slide 0 en IndexedDB.', false);
+          }
+        } catch (error) {
+          console.warn('IndexedDB restringido o con conflicto de versión, activando respaldo local:', error);
+          appState.usingFallbackStorage = true;
+          const fallbackRecord = validateAndNormalizePresentation(readFromFallbackStorage());
+          if (fallbackRecord) {
+            appState.presentation = fallbackRecord;
+            updateDbStatusUI('Recuperado (Modo Local file://)', 'warning');
+          } else {
+            await persistCurrentState('Presentación inicializada en almacenamiento local.', false);
+          }
+        }
+
+        syncStyleControlsWithState();
+        renderAll();
+      }
+
+      document.addEventListener('DOMContentLoaded', initializeApp);
+    })();
+  </script>
+</body>
+</html>
