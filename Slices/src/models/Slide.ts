@@ -1,16 +1,14 @@
-export type SlideLayout =
-  | 'text-only'
-  | 'image-only'
-  | 'text-and-image';
+export type SlideLayout = 'Title' | 'TextOnly' | 'ImageOnly' | 'TextAndImage';
 
 export interface Slide {
   id: string;
   projectId: string;
-  title: string;
-  content: string;
-  imageUrl?: string;
+  type: 'title' | 'content';
+  content: {
+    title?: string;
+    text?: string;
+    imageUrl?: string;
+  };
   layout: SlideLayout;
   order: number;
-  createdAt: string;
-  updatedAt: string;
 }

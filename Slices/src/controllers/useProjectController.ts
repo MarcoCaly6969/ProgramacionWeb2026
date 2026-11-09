@@ -6,16 +6,20 @@ export function useProjectController(repository: IProjectRepository) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [isPresentation, setIsPresentation] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadProjects = useCallback(async () => {
-    const data = await repository.getProjects();
-    setProjects(data);
-    setCurrentProject((prev) => {
-      if (prev) {
-        return data.find((p) => p.id === prev.id) || data[0] || null;
-      }
-      return data[0] || null;
-    });
+    try {
+      const data = await repository.getProjects();
+      setProjects(data);
+      setCurrentProject((prev) => {
+        if (prev) return data.find((p) => p.id === prev.id) || data[0] || null;
+        return data[0] || null;
+      });
+      setError(null);
+    } catch {
+      setError('No se pudieron cargar los proyectos. Comprueba que IndexedDB esté disponible.');
+    }
   }, [repository]);
 
   useEffect(() => {
@@ -61,5 +65,6 @@ export function useProjectController(repository: IProjectRepository) {
     createProject,
     deleteProject,
     loadProjects,
+    error,
   };
 }

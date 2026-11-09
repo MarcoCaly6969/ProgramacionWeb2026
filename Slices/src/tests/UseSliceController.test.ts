@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { IndexedDbProjectRepository } from '../infrastructure/IndexedDbProjectRepository';
 import { useSlideController } from '../controllers/useSlideController';
 import type { Project } from '../models/Project';
